@@ -19,11 +19,11 @@ jobs:
 
       # ✅ 建立 Docker 映像
       - name: Build Docker image
-        run: docker build -t ghcr.io/cardiaceres/manufacturing_system:latest .
+        run: docker build -t ghcr.io/cardiaceres/manufacturing-system-asp.net:latest .
 
       # ✅ 推送映像到 GHCR
       - name: Push Docker image to GHCR
-        run: docker push ghcr.io/cardiaceres/manufacturing_system:latest
+        run: docker push ghcr.io/cardiaceres/manufacturing-system-asp.net:latest
 
       # ✅ 觸發 Render 自動部署
       - name: Trigger Render Deploy Hook
