@@ -9,7 +9,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # 複製 ASP.NET Core 專案檔
-COPY aspnet_core_conversion/Manufacturing.Api/ .
+COPY manufacturing-system-asp.net/ .
 
 # 複製前端打包好的檔案到 wwwroot
 COPY --from=frontend /frontend/dist ./wwwroot
