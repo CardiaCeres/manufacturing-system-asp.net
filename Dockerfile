@@ -4,26 +4,29 @@ WORKDIR /frontend
 COPY project/ .
 RUN npm install && npm run build
 
-# Step 2: Build backend (Spring Boot)
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+# Step 2: Build backend (ASP.NET Core)
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# 複製 ASP.NET Core 專案檔
+COPY aspnet_core_conversion/Manufacturing.Api/ .
+
+# 複製前端打包好的檔案到 wwwroot
+COPY --from=frontend /frontend/dist ./wwwroot
+
+# 還原並建置 (Release)
+RUN dotnet restore
+RUN dotnet publish -c Release -o /app/publish
+
+# Step 3: Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-COPY manufacturing_system/ .
 
-# 複製前端打包好的檔案到 Spring Boot 靜態資源路徑
-COPY --from=frontend /frontend/dist ./src/main/resources/static
-
-# 使用 Maven 打包，跳過測試
-RUN mvn clean package -DskipTests
-
-# Step 3: Create minimal runtime image
-FROM openjdk:21-jdk-slim
-WORKDIR /app
-
-# 複製 JAR 檔到容器
-COPY --from=build /app/target/*.jar app.jar
+# 複製建置成果
+COPY --from=build /app/publish .
 
 # 開放應用程式埠
 EXPOSE 8080
 
-# 啟動 Spring Boot
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# 啟動 ASP.NET Core
+ENTRYPOINT ["dotnet", "Manufacturing.Api.dll"]
