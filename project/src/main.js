@@ -3,7 +3,7 @@ import App from './App.vue'
 import router from './router'
 import axios from 'axios'
 
-axios.defaults.baseURL = 'https://manufacturing-system-latest.onrender.com/api'
+axios.defaults.baseURL = 'https://manufacturing-system-asp-net-latest.onrender.com/api'
 
 axios.interceptors.request.use(
   config => {
