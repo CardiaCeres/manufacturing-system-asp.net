@@ -17,18 +17,17 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# 複製 .csproj 並還原依賴
-COPY manufacturing_system/*.csproj ./manufacturing_system/
-RUN dotnet restore ./manufacturing_system/manufacturing_system.csproj
-
-# 複製整個 ASP.NET Core 專案
+# 複製整個 ASP.NET Core 專案到容器
 COPY manufacturing_system/. ./manufacturing_system/
+
+# Restore 依賴
+RUN dotnet restore ./manufacturing_system/ManufacturingSystem.csproj
 
 # 複製前端打包好的檔案到 wwwroot
 COPY --from=frontend /frontend/dist ./manufacturing_system/wwwroot
 
-# 發佈為 self-contained 應用（Release 模式）
-RUN dotnet publish ./manufacturing_system/manufacturing_system.csproj -c Release -o /app/publish
+# 發佈為 Release
+RUN dotnet publish ./manufacturing_system/ManufacturingSystem.csproj -c Release -o /app/publish
 
 # =============================
 # Step 3: Runtime image
@@ -39,8 +38,8 @@ WORKDIR /app
 # 複製發佈好的檔案
 COPY --from=build /app/publish ./
 
-# 開放應用程式埠
+# 開放埠號
 EXPOSE 8080
 
 # 啟動 ASP.NET Core 應用
-ENTRYPOINT ["dotnet", "manufacturing_system.dll"]
+ENTRYPOINT ["dotnet", "ManufacturingSystem.dll"]
