@@ -6,9 +6,19 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DB Context 直接讀 appsettings.json / 環境變數
+// 讀取環境變數
+var dbHost = Environment.GetEnvironmentVariable("DB_URL");
+var dbName = Environment.GetEnvironmentVariable("DB_NAME");
+var dbUser = Environment.GetEnvironmentVariable("DB_USER");
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
+var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
+
+// 建立 PostgreSQL 連線字串
+var connectionString = $"Host={dbHost};Port=5432;Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Require;Trust Server Certificate=true;";
+
+// DB Context
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 // Repositories & Services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -22,19 +32,18 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(builder.Configuration["FrontendUrl"] ?? "https://manufacturing-system-asp-net-latest.onrender.com")
+        policy.WithOrigins(frontendUrl ?? "https://manufacturing-system-asp-net-latest.onrender.com")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// Controllers & Swagger
+// Controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Build App
 var app = builder.Build();
 
 // Middleware
@@ -52,11 +61,7 @@ app.MapFallbackToFile("index.html");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Manufacturing API V1");
-        c.RoutePrefix = "swagger";
-    });
+    app.UseSwaggerUI();
 }
 
 app.Run();
