@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace ManufacturingSystem.Controllers
@@ -50,6 +51,15 @@ namespace ManufacturingSystem.Controllers
             var jsonDoc = JsonNode.Parse(resultJson);
 
             var reply = jsonDoc?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
+
+            // 🔥 移除 Markdown 的粗體與星號
+            if (!string.IsNullOrEmpty(reply))
+            {
+                // 移除成對的 **文字**
+                reply = Regex.Replace(reply, @"\*\*(.*?)\*\*", "$1");
+                // 移除剩下的單獨 *
+                reply = Regex.Replace(reply, @"\*", "");
+            }
 
             return Ok(new { reply });
         }
