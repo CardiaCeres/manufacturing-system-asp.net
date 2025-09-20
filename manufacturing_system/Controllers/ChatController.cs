@@ -11,7 +11,7 @@ namespace ManufacturingSystem.Controllers
     public class ChatController : ControllerBase
     {
         private readonly IHttpClientFactory _clientFactory;
-        private readonly string _apiKey = "YOUR_GOOGLE_GEMINI_API_KEY";
+        private readonly string _apiKey = "GEMINI_API_KEY";
 
         public ChatController(IHttpClientFactory clientFactory)
         {
