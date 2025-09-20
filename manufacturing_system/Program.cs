@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// DB Context
+// DB Context 直接讀 appsettings.json / 環境變數
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Repositories & Services
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -22,18 +22,19 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:8080")
+        policy.WithOrigins(builder.Configuration["FrontendUrl"] ?? "https://manufacturing-system-asp-net-latest.onrender.com")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// Controllers
+// Controllers & Swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Build App
 var app = builder.Build();
 
 // Middleware
@@ -47,11 +48,15 @@ app.MapControllers();
 // SPA fallback
 app.MapFallbackToFile("index.html");
 
-// Swagger
+// Swagger (開發環境)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Manufacturing API V1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.Run();
