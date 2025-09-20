@@ -8,25 +8,20 @@ RUN npm install && npm run build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# 複製 ASP.NET Core 專案檔
+# 複製 ASP.NET Core 專案
 COPY manufacturing_system/ .
 
 # 複製前端打包好的檔案到 wwwroot
 COPY --from=frontend /frontend/dist ./wwwroot
 
-# 還原並建置 (Release)
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
+# 還原並建置
+RUN dotnet restore ./ManufacturingSystem.csproj
+RUN dotnet publish ./ManufacturingSystem.csproj -c Release -o /app/publish
 
 # Step 3: Runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
-
-# 複製建置成果
 COPY --from=build /app/publish .
 
-# 開放應用程式埠
 EXPOSE 8080
-
-# 啟動 ASP.NET Core
-ENTRYPOINT ["dotnet", "Manufacturing.Api.dll"]
+ENTRYPOINT ["dotnet", "ManufacturingSystem.dll"]
