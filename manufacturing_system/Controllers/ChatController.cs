@@ -17,7 +17,7 @@ namespace ManufacturingSystem.Controllers
         public ChatController(IHttpClientFactory clientFactory, IConfiguration config)
         {
             _clientFactory = clientFactory;
-            _apiKey = config["Gemini:ApiKey"]; // 從 appsettings.json 或環境變數讀取
+            _apiKey = config["GEMINI_API_KEY"]; // 從 appsettings.json 或環境變數讀取
         }
 
         [HttpPost]
