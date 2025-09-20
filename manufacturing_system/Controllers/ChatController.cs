@@ -18,7 +18,7 @@ namespace ManufacturingSystem.Controllers
         public ChatController(IHttpClientFactory clientFactory, IConfiguration config)
         {
             _clientFactory = clientFactory;
-            _apiKey = config["GEMINI_API_KEY"]; // 從 appsettings.json 或環境變數讀取
+            _apiKey = config["GEMINI_API_KEY"]; // 從 Render 環境變數讀取
         }
 
         [HttpPost]
@@ -36,7 +36,7 @@ namespace ManufacturingSystem.Controllers
                 contents = new[]
                 {
                     new {
-                        parts = new[] { new { text = $"你是一個智慧客服助理，負責回答有關訂單管理系統的問題，請用中文正確回覆問題，僅回答與問題直接相關的部分，功能包括：登入、登出、註冊、查詢、新增、修改、刪除訂單，帳號密碼保護，資料加密，安全有保障。登入:輸入帳號與密碼即可登入系統。登出:點選登出，註冊：填寫帳號、密碼與Email建立帳戶。查詢訂單:登入系統後可查詢訂單狀態。新增訂單:登入後點選新增訂單，填寫商品與數量後送出。修改訂單:於訂單列表點選編輯進行修改。刪除訂單:點選刪除後確認即可移除該筆訂單。：{userMessage}" } }
+                        parts = new[] { new { text = $"你是一個智慧客服助理，請用中文回答以下問題：{userMessage}" } }
                     }
                 }
             });
@@ -52,16 +52,17 @@ namespace ManufacturingSystem.Controllers
 
             var reply = jsonDoc?["candidates"]?[0]?["content"]?["parts"]?[0]?["text"]?.ToString();
 
-            // 🔥 移除 Markdown 的粗體與星號
+            // 🔥 清理文字 (移除 Markdown 與換行符號)
             if (!string.IsNullOrEmpty(reply))
             {
-                // 移除成對的 **文字**
-                reply = Regex.Replace(reply, @"\*\*(.*?)\*\*", "$1");
-                // 移除剩下的單獨 *
-                reply = Regex.Replace(reply, @"\*", "");
+                reply = Regex.Replace(reply, @"\*\*(.*?)\*\*", "$1"); // 移除 **粗體**
+                reply = Regex.Replace(reply, @"\*", "");              // 移除單獨 *
+                reply = reply.Replace("\n", " ");                     // 把換行轉成空格
+                reply = reply.Trim();
             }
 
-            return Ok(new { reply });
+            // ✅ 直接回傳純文字，不包 JSON
+            return Content(reply ?? "", "text/plain", Encoding.UTF8);
         }
     }
 }
