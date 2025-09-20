@@ -30,6 +30,11 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 // =========================
+// HttpClient (for Gemini API)
+// =========================
+builder.Services.AddHttpClient();
+
+// =========================
 // CORS 設定
 // =========================
 builder.Services.AddCors(options =>
