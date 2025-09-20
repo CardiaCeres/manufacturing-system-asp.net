@@ -13,19 +13,19 @@ RUN npm run build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# 複製整個 ASP.NET Core 專案
+# 複製 ASP.NET Core 專案
 COPY manufacturing_system/. ./manufacturing_system/
 
 # 切換工作目錄到專案
 WORKDIR /app/manufacturing_system
 
-# 還原依賴
+# 還原 NuGet 套件
 RUN dotnet restore
 
 # 複製前端打包好的檔案到 wwwroot
 COPY --from=frontend /frontend/dist ./wwwroot
 
-# 發佈
+# 發佈為 Release
 RUN dotnet publish -c Release -o /app/publish
 
 # =============================
