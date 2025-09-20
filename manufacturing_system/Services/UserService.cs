@@ -16,6 +16,7 @@ namespace ManufacturingSystem.Services
             _userRepository = userRepository;
         }
 
+        // 登入驗證
         public async Task<User?> ValidateUserAsync(string username, string password)
         {
             var user = await _userRepository.GetByUsernameAsync(username);
@@ -28,12 +29,15 @@ namespace ManufacturingSystem.Services
         public async Task<User?> GetByUsernameAsync(string username) =>
             await _userRepository.GetByUsernameAsync(username);
 
+        // 註冊
         public async Task<User> RegisterUserAsync(User user)
         {
+            // 加密密碼
             user.Password = _passwordHasher.HashPassword(user, user.Password);
             return await _userRepository.AddOrUpdateAsync(user);
         }
 
+        // 產生重設密碼 Token
         public async Task<string> GenerateResetTokenAsync(User user)
         {
             var token = Guid.NewGuid().ToString();
@@ -43,6 +47,7 @@ namespace ManufacturingSystem.Services
             return token;
         }
 
+        // 重設密碼
         public async Task ResetPasswordAsync(User user, string newPassword)
         {
             user.Password = _passwordHasher.HashPassword(user, newPassword);
@@ -51,6 +56,7 @@ namespace ManufacturingSystem.Services
             await _userRepository.AddOrUpdateAsync(user);
         }
 
+        // 驗證 Token
         public Task<bool> IsResetTokenValidAsync(User user, string token)
         {
             return Task.FromResult(user.ResetToken == token && user.TokenExpiry.HasValue && user.TokenExpiry > DateTime.UtcNow);
