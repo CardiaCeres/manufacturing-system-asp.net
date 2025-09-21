@@ -8,7 +8,9 @@ namespace ManufacturingSystem.Security
 {
     public static class JwtHelper
     {
-        private static readonly string Secret = "yourSecretKey123yourSecretKey123"; // >=32字元
+        // 從環境變數讀取 JWT_SECRET，如果沒設定就拋例外
+        private static readonly string Secret = Environment.GetEnvironmentVariable("JWT_SECRET") // 建議長度 >= 256 bits (32 bytes)
+                                               ?? throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
         private static readonly byte[] Key = Encoding.UTF8.GetBytes(Secret);
 
         public static string GenerateToken(string username, int expireMinutes = 1440)
