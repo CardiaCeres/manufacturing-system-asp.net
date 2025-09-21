@@ -40,6 +40,11 @@ namespace ManufacturingSystem.Services
             existing.TotalAmount = order.TotalAmount;
             existing.Status = order.Status;
             existing.OrderDate = order.OrderDate;
+            // 自動計算總金額
+            if (existing.Quantity.HasValue && existing.Price.HasValue)
+                existing.TotalAmount = existing.Quantity.Value * existing.Price.Value;
+            else
+                existing.TotalAmount = null;
 
             return await _orderRepository.UpdateAsync(existing);
         }
