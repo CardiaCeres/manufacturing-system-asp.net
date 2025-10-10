@@ -61,6 +61,8 @@ namespace ManufacturingSystem.Controllers
                 // 普通使用者只能建立自己的訂單
                 order.UserId = currentUser.Id;
             }
+                // 同步部門到 Order**
+                order.Department = currentUser.Department;
 
             var created = await _orderService.CreateOrderAsync(order);
             return Ok(created);
