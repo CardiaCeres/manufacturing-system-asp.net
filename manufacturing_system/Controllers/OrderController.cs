@@ -51,13 +51,6 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
-                // 管理者必須指定 UserId，並且指定的使用者要在同部門
-                var targetUser = await _userService.GetUserByIdAsync(order.UserId);
-                if (targetUser == null || targetUser.Department != currentUser.Department)
-                    return BadRequest("指定使用者不存在或不在同部門");
-            }
-            else
-            {
                 // 普通使用者只能建立自己的訂單
                 order.UserId = currentUser.Id;
             }
