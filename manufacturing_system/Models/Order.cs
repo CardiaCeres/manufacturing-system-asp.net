@@ -13,5 +13,6 @@ namespace ManufacturingSystem.Models
         public string? Status { get; set; }
         public string? OrderDate { get; set; }
         public long UserId { get; set; }
+        public User? User { get; set; }
     }
 }
