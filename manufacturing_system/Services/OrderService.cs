@@ -23,7 +23,7 @@ namespace ManufacturingSystem.Services
             return await _orderRepository.AddAsync(order);
         }
 
-        public async Task<Order?> GetByIdAsync(long id) =>
+        public async Task<Order?> GetOrderByIdAsync(long id) =>
             await _orderRepository.GetByIdAsync(id);
 
         public async Task<Order> UpdateOrderAsync(long id, Order order)
