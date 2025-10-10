@@ -24,36 +24,23 @@ namespace ManufacturingSystem.Controllers
         public async Task<IActionResult> Login([FromBody] User user)
         {
             var validUser = await _userService.ValidateUserAsync(user.Username, user.Password);
-            if (validUser == null) 
-                return Unauthorized("帳號或密碼錯誤");
+            if (validUser == null) return Unauthorized("憑證錯誤，請確認帳號密碼");
 
             // JWT 包含 Username, Role, Department
-            var token = JwtHelper.GenerateToken(
-                validUser.Username, 
-                validUser.Role.ToString(), 
-                validUser.Department
-            );
-
+            var token = JwtHelper.GenerateToken(validUser.Username, validUser.Role.ToString(), validUser.Department);
             return Ok(new { Token = token, User = validUser });
         }
 
-        // ✅ 註冊
+        // 註冊
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] User user)
         {
-            if (string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Password))
-                return BadRequest("帳號與密碼為必填");
+            var existing = await _userService.GetByUsernameAsync(user.Username);
+            if (existing != null) return BadRequest("使用者名稱已存在");
 
-            var existingUser = await _userService.GetByUsernameAsync(user.Username);
-            if (existingUser != null)
-                return BadRequest("使用者名稱已存在");
-
-            // 設定預設角色
-            if (user.Role == 0) 
+            // 預設角色為 User
+            if (string.IsNullOrEmpty(user.Role.ToString()))
                 user.Role = UserRole.User;
-
-            // 預設部門
-            user.Department ??= "一般部門";
 
             var newUser = await _userService.RegisterUserAsync(user);
             return Ok(newUser);
@@ -70,13 +57,12 @@ namespace ManufacturingSystem.Controllers
             return Ok(user);
         }
 
-        // ✅ 忘記密碼（修正查詢方式）
+        // 忘記密碼 → 產生重設 Token 並寄信
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] string email)
         {
-            var user = await _userService.GetByEmailAsync(email);
-            if (user == null)
-                return NotFound("找不到此 Email 對應的使用者");
+            var user = await _userService.GetByUsernameAsync(email);
+            if (user == null) return NotFound("找不到此使用者");
 
             var token = await _userService.GenerateResetTokenAsync(user);
             var resetUrl = $"https://yourapp.com/reset-password?token={token}&username={user.Username}";
@@ -99,7 +85,7 @@ namespace ManufacturingSystem.Controllers
             return Ok("密碼重設成功");
         }
 
-        // 管理者：取得部門內使用者
+        // 以下為管理者功能，需要在 Middleware 驗證 Role
         [HttpGet]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -132,7 +118,7 @@ namespace ManufacturingSystem.Controllers
         }
     }
 
-    // DTO
+    // 輔助 DTO
     public class ResetPasswordRequest
     {
         public string Username { get; set; } = string.Empty;
