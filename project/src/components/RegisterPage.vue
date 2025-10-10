@@ -18,6 +18,22 @@
         </div>
 
         <input v-model="email" type="email" placeholder="📧 電子信箱" required />
+
+        <div class="select-wrapper">
+          <select v-model="department" required>
+            <option value="">🏢 選擇部門</option>
+            <option>管理部</option>
+            <option>資訊部</option>
+            <option>業務部</option>
+            <option>行銷部</option>
+            <option>工程部</option>
+          </select>
+          <!-- inline SVG 箭頭 -->
+          <svg class="select-arrow" viewBox="0 0 24 24">
+            <path d="M7 10l5 5 5-5H7z" fill="#777"/>
+          </svg>
+        </div>
+
         <button type="submit">註冊</button>
 
         <p v-if="error" class="error">{{ error }}</p>
@@ -40,6 +56,7 @@ export default {
       username: "",
       password: "",
       email: "",
+      department: "",
       showPassword: false,
       error: "",
       success: "",
@@ -53,7 +70,8 @@ export default {
         await axios.post('/register', {
           username: this.username,
           password: this.password,
-          email: this.email
+          email: this.email,
+          department: this.department
         });
         this.success = "🎉 註冊成功，即將導向登入畫面";
         this.error = "";
@@ -130,6 +148,7 @@ export default {
   background: #fff;
 }
 
+/* 密碼欄眼睛 */
 .password-field {
   position: relative;
 }
@@ -145,6 +164,7 @@ export default {
   color: #777;
 }
 
+/* 按鈕 */
 .register-form button {
   width: 100%;
   margin-top: 20px;
@@ -161,6 +181,43 @@ export default {
 
 .register-form button:hover {
   background: #43a047;
+}
+
+/* 下拉選單 */
+.select-wrapper {
+  position: relative;
+}
+
+.register-form select {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 16px;
+  color: #555;
+  background-color: #f9f9f9;
+  appearance: none; /* 移除預設箭頭 */
+  cursor: pointer;
+}
+
+.register-form select:focus {
+  outline: none;
+  border-color: #66a6ff;
+  background: #fff;
+  color: #333;
+}
+
+.select-arrow {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .error {
