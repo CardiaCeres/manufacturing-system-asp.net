@@ -17,6 +17,7 @@ namespace ManufacturingSystem.Repositories
             await _context.Orders
                 .AsNoTracking()
                 .Where(o => o.UserId == userId)
+                .Include(o => o.User) // Include User 避免 null
                 .OrderBy(o => o.OrderNumber)
                 .ToListAsync();
 
@@ -28,7 +29,9 @@ namespace ManufacturingSystem.Repositories
         }
 
         public async Task<Order?> GetByIdAsync(long id) =>
-            await _context.Orders.FindAsync(id);
+            await _context.Orders
+                .Include(o => o.User) // Include User 避免管理者檢查失敗
+                .FirstOrDefaultAsync(o => o.Id == id);
 
         public async Task<Order> UpdateAsync(Order order)
         {
@@ -40,14 +43,18 @@ namespace ManufacturingSystem.Repositories
         public async Task DeleteAsync(long id)
         {
             var order = await _context.Orders.FindAsync(id);
-            if (order != null) _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
+            if (order != null)
+            {
+                _context.Orders.Remove(order);
+                await _context.SaveChangesAsync();
+            }
         }
 
         // 管理者功能
         public async Task<List<Order>> GetAllAsync() =>
             await _context.Orders
                 .AsNoTracking()
+                .Include(o => o.User) // Include User 避免 null
                 .OrderBy(o => o.OrderNumber)
                 .ToListAsync();
 
@@ -55,7 +62,7 @@ namespace ManufacturingSystem.Repositories
             await _context.Orders
                 .AsNoTracking()
                 .Include(o => o.User)
-                .Where(o => o.User.Department == department)
+                .Where(o => o.User != null && o.User.Department == department)
                 .OrderBy(o => o.OrderNumber)
                 .ToListAsync();
     }
