@@ -1,3 +1,4 @@
+using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -23,17 +24,28 @@ namespace ManufacturingSystem.Services
 
         public async Task SendResetPasswordEmailAsync(string toEmail, string resetUrl)
         {
-            var payload = new
-            {
-                from = "no-reply@yourapp.com",
-                to = toEmail,
-                subject = "重設您的密碼",
-                html = $@"
+            await SendCustomEmailAsync("no-reply@yourapp.com", toEmail, "重設您的密碼",
+                $@"
                 <div style='font-family:Arial,sans-serif;line-height:1.6'>
                     <h2>🔐 重設密碼通知</h2>
                     <p>請點擊下方按鈕設定新密碼：</p>
                     <p><a href='{resetUrl}' style='display:inline-block;padding:10px 20px;background-color:#667eea;color:#fff;text-decoration:none;border-radius:8px;'>重設密碼</a></p>
-                </div>"
+                </div>");
+        }
+
+        public async Task SendNotificationEmailAsync(string toEmail, string subject, string message)
+        {
+            await SendCustomEmailAsync("no-reply@yourapp.com", toEmail, subject, message);
+        }
+
+        public async Task SendCustomEmailAsync(string fromEmail, string toEmail, string subject, string htmlContent)
+        {
+            var payload = new
+            {
+                from = fromEmail,
+                to = toEmail,
+                subject = subject,
+                html = htmlContent
             };
 
             var json = JsonSerializer.Serialize(payload);
