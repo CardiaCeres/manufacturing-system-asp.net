@@ -2,6 +2,7 @@ using ManufacturingSystem.Data;
 using ManufacturingSystem.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ManufacturingSystem.Repositories
@@ -11,6 +12,7 @@ namespace ManufacturingSystem.Repositories
         private readonly AppDbContext _context;
         public OrderRepository(AppDbContext context) => _context = context;
 
+        // 使用者 CRUD
         public async Task<List<Order>> GetOrdersByUserIdAsync(long userId) =>
             await _context.Orders
                 .AsNoTracking()
@@ -28,6 +30,13 @@ namespace ManufacturingSystem.Repositories
         public async Task<Order?> GetByIdAsync(long id) =>
             await _context.Orders.FindAsync(id);
 
+        public async Task<Order> UpdateAsync(Order order)
+        {
+            _context.Orders.Update(order);
+            await _context.SaveChangesAsync();
+            return order;
+        }
+
         public async Task DeleteAsync(long id)
         {
             var order = await _context.Orders.FindAsync(id);
@@ -35,11 +44,19 @@ namespace ManufacturingSystem.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Order> UpdateAsync(Order order)
-        {
-            _context.Orders.Update(order);
-            await _context.SaveChangesAsync();
-            return order;
-        }
+        // 管理者功能
+        public async Task<List<Order>> GetAllAsync() =>
+            await _context.Orders
+                .AsNoTracking()
+                .OrderBy(o => o.OrderNumber)
+                .ToListAsync();
+
+        public async Task<List<Order>> GetByDepartmentAsync(string department) =>
+            await _context.Orders
+                .AsNoTracking()
+                .Include(o => o.User)
+                .Where(o => o.User.Department == department)
+                .OrderBy(o => o.OrderNumber)
+                .ToListAsync();
     }
 }
