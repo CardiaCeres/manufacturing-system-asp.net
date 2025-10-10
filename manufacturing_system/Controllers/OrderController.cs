@@ -27,11 +27,13 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
+                // 管理者取得同部門訂單
                 var orders = await _orderService.GetOrdersByDepartmentAsync(currentUser.Department);
                 return Ok(orders);
             }
             else
             {
+                // 普通使用者取得自己訂單
                 var orders = await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
                 return Ok(orders);
             }
@@ -47,9 +49,16 @@ namespace ManufacturingSystem.Controllers
             if (string.IsNullOrEmpty(order.ProductName))
                 return BadRequest("產品名稱為必填");
 
-            // 普通使用者只能建立自己的訂單
-            if (currentUser.Role != UserRole.Manager)
+            if (currentUser.Role == UserRole.Manager)
             {
+                // 管理者必須指定 UserId，並且指定的使用者要在同部門
+                var targetUser = await _userService.GetUserByIdAsync(order.UserId);
+                if (targetUser == null || targetUser.Department != currentUser.Department)
+                    return BadRequest("指定使用者不存在或不在同部門");
+            }
+            else
+            {
+                // 普通使用者只能建立自己的訂單
                 order.UserId = currentUser.Id;
             }
 
