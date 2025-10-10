@@ -51,5 +51,13 @@ namespace ManufacturingSystem.Services
 
         public async Task DeleteOrderAsync(long id) =>
             await _orderRepository.DeleteAsync(id);
-    }
+    
+        // 管理者取得全部訂單
+        public async Task<List<Order>> GetAllOrdersAsync() =>
+            await _orderRepository.GetAllAsync();
+
+        // 取得同部門訂單（管理者）
+        public async Task<List<Order>> GetOrdersByDepartmentAsync(string department) =>
+            await _orderRepository.GetByDepartmentAsync(department);
+   }
 }
