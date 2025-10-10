@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace ManufacturingSystem.Controllers
 {
     [ApiController]
-    [Route("api/users")]
+    [Route("api")]
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
