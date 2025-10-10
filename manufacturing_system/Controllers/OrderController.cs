@@ -28,13 +28,13 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
-                // 管理者可以看到所有訂單
-                var orders = await _orderService.GetAllOrdersAsync();
+                // 管理者只看同部門訂單
+                var orders = await _orderService.GetOrdersByDepartmentAsync(currentUser.Department);
                 return Ok(orders);
             }
             else
             {
-                // 普通使用者只能看到自己的訂單
+                // 普通使用者只能看自己的訂單
                 var orders = await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
                 return Ok(orders);
             }
@@ -50,10 +50,16 @@ namespace ManufacturingSystem.Controllers
             if (string.IsNullOrEmpty(order.ProductName))
                 return BadRequest("產品名稱為必填");
 
-            // 管理者可以指定 UserId
-            if (currentUser.Role != UserRole.Manager)
+            if (currentUser.Role == UserRole.Manager)
             {
-                order.UserId = currentUser.Id; // 普通使用者只能建立自己的訂單
+                // 管理者只能建立自己部門的訂單
+                order.Department = currentUser.Department;
+            }
+            else
+            {
+                // 普通使用者只能建立自己的訂單
+                order.UserId = currentUser.Id;
+                order.Department = currentUser.Department; // 同步部門
             }
 
             var created = await _orderService.CreateOrderAsync(order);
@@ -70,12 +76,19 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查：普通使用者只能更新自己的訂單
-            if (currentUser.Role != UserRole.Manager && existing.UserId != currentUser.Id)
+            // 權限檢查
+            if (currentUser.Role == UserRole.Manager && existing.Department != currentUser.Department)
+                return Forbid("沒有權限更新此訂單");
+
+            if (currentUser.Role == UserRole.User && existing.UserId != currentUser.Id)
                 return Forbid("沒有權限更新此訂單");
 
             try
             {
+                // 保留部門/使用者資訊，防止被亂改
+                order.Department = existing.Department;
+                order.UserId = existing.UserId;
+
                 var updated = await _orderService.UpdateOrderAsync(id, order);
                 return Ok(updated);
             }
@@ -95,8 +108,10 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查：普通使用者只能刪自己的訂單
-            if (currentUser.Role != UserRole.Manager && existing.UserId != currentUser.Id)
+            if (currentUser.Role == UserRole.Manager && existing.Department != currentUser.Department)
+                return Forbid("沒有權限刪除此訂單");
+
+            if (currentUser.Role == UserRole.User && existing.UserId != currentUser.Id)
                 return Forbid("沒有權限刪除此訂單");
 
             try
