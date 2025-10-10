@@ -18,7 +18,8 @@ namespace ManufacturingSystem.Controllers
         public ChatController(IHttpClientFactory clientFactory, IConfiguration config)
         {
             _clientFactory = clientFactory;
-            _apiKey = config["GEMINI_API_KEY"]; // 從 Render 環境變數讀取
+            _apiKey = config["GEMINI_API_KEY"]
+                              ?? throw new InvalidOperationException("GEMINI_API_KEY not set."); // 從 Render 環境變數讀取
         }
 
         [HttpPost]
