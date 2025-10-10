@@ -13,14 +13,12 @@ namespace ManufacturingSystem.Security
                                                ?? throw new InvalidOperationException("JWT_SECRET environment variable is not set.");
         private static readonly byte[] Key = Encoding.UTF8.GetBytes(Secret);
 
-        /// <summary>
-        /// 生成 JWT Token
-        /// </summary>
-        /// <param name="username">使用者名稱</param>
-        /// <param name="role">使用者角色</param>
-        /// <param name="department">使用者部門</param>
-        /// <param name="expireMinutes">過期時間 (分鐘)，預設 1 天</param>
-        /// <returns>JWT 字串</returns>
+        // 生成 JWT Token
+        // <param name="username">使用者名稱</param>
+        // <param name="role">使用者角色</param>
+        // <param name="department">使用者部門</param>
+        // <param name="expireMinutes">過期時間 (分鐘)，預設 1 天</param>
+        // <returns>JWT 字串</returns>
         public static string GenerateToken(string username, string role, string department, int expireMinutes = 1440)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -44,11 +42,9 @@ namespace ManufacturingSystem.Security
             return tokenHandler.WriteToken(token);
         }
 
-        /// <summary>
-        /// 驗證 JWT Token，並回傳 ClaimsPrincipal
-        /// </summary>
-        /// <param name="token">JWT 字串</param>
-        /// <returns>ClaimsPrincipal 或 null</returns>
+        // 驗證 JWT Token，並回傳 ClaimsPrincipal
+        // <param name="token">JWT 字串</param>
+        // <returns>ClaimsPrincipal 或 null</returns>
         public static ClaimsPrincipal? ValidateToken(string token)
         {
             try
@@ -72,33 +68,27 @@ namespace ManufacturingSystem.Security
             }
         }
 
-        /// <summary>
-        /// 驗證 Token 並取得 Username
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns>Username 或 null</returns>
+        // 驗證 Token 並取得 Username
+        // <param name="token"></param>
+        // <returns>Username 或 null</returns>
         public static string? GetUsernameFromToken(string token)
         {
             var principal = ValidateToken(token);
             return principal?.Identity?.Name;
         }
 
-        /// <summary>
-        /// 驗證 Token 並取得 Role
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns>Role 或 null</returns>
+        // 驗證 Token 並取得 Role
+        // <param name="token"></param>
+        // <returns>Role 或 null</returns>
         public static string? GetRoleFromToken(string token)
         {
             var principal = ValidateToken(token);
             return principal?.FindFirst(ClaimTypes.Role)?.Value;
         }
 
-        /// <summary>
-        /// 驗證 Token 並取得 Department
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns>Department 或 null</returns>
+        // 驗證 Token 並取得 Department
+        // <param name="token"></param>
+        // <returns>Department 或 null</returns>
         public static string? GetDepartmentFromToken(string token)
         {
             var principal = ValidateToken(token);
