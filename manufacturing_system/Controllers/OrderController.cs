@@ -47,15 +47,10 @@ namespace ManufacturingSystem.Controllers
             if (string.IsNullOrEmpty(order.ProductName))
                 return BadRequest("產品名稱為必填");
 
-            // 部門與使用者權限控制
-            if (currentUser.Role == UserRole.Manager)
-            {
-                order.Department = currentUser.Department; // 強制設定部門
-            }
-            else
+            // 普通使用者只能建立自己的訂單
+            if (currentUser.Role != UserRole.Manager)
             {
                 order.UserId = currentUser.Id;
-                order.Department = currentUser.Department; // 強制同步部門
             }
 
             var created = await _orderService.CreateOrderAsync(order);
@@ -73,14 +68,19 @@ namespace ManufacturingSystem.Controllers
             if (existing == null) return NotFound("訂單不存在");
 
             // 權限檢查
-            if (currentUser.Role == UserRole.Manager && existing.Department != currentUser.Department)
-                return Forbid("沒有權限更新此訂單");
+            if (currentUser.Role == UserRole.Manager)
+            {
+                if (existing.User == null || existing.User.Department != currentUser.Department)
+                    return Forbid("沒有權限更新此訂單");
+            }
+            else
+            {
+                if (existing.UserId != currentUser.Id)
+                    return Forbid("沒有權限更新此訂單");
+            }
 
-            if (currentUser.Role == UserRole.User && existing.UserId != currentUser.Id)
-                return Forbid("沒有權限更新此訂單");
-
+            // 防止亂改 UserId
             order.Id = id;
-            order.Department = existing.Department; // 防止部門亂改
             order.UserId = existing.UserId;
 
             var updated = await _orderService.UpdateOrderAsync(id, order);
@@ -97,11 +97,17 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            if (currentUser.Role == UserRole.Manager && existing.Department != currentUser.Department)
-                return Forbid("沒有權限刪除此訂單");
-
-            if (currentUser.Role == UserRole.User && existing.UserId != currentUser.Id)
-                return Forbid("沒有權限刪除此訂單");
+            // 權限檢查
+            if (currentUser.Role == UserRole.Manager)
+            {
+                if (existing.User == null || existing.User.Department != currentUser.Department)
+                    return Forbid("沒有權限刪除此訂單");
+            }
+            else
+            {
+                if (existing.UserId != currentUser.Id)
+                    return Forbid("沒有權限刪除此訂單");
+            }
 
             await _orderService.DeleteOrderAsync(id);
             return NoContent();
