@@ -27,13 +27,13 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
-                // 管理者取得同部門訂單
+                // 管理者可查詢同部門所有使用者的訂單
                 var orders = await _orderService.GetOrdersByDepartmentAsync(currentUser.Department);
                 return Ok(orders);
             }
             else
             {
-                // 普通使用者取得自己訂單
+                // 一般使用者只能查詢自己的訂單
                 var orders = await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
                 return Ok(orders);
             }
@@ -49,13 +49,24 @@ namespace ManufacturingSystem.Controllers
             if (string.IsNullOrEmpty(order.ProductName))
                 return BadRequest("產品名稱為必填");
 
+            // 管理者可以幫同部門使用者建立訂單
             if (currentUser.Role == UserRole.Manager)
             {
-                // 普通使用者只能建立自己的訂單
-                order.UserId = currentUser.Id;
-            }
-                // 同步部門到 Order**
+                if (order.UserId == 0)
+                    return BadRequest("請指定要建立訂單的使用者 ID");
+
+                var targetUser = await _userService.GetUserByIdAsync(order.UserId);
+                if (targetUser == null || targetUser.Department != currentUser.Department)
+                    return BadRequest("指定使用者不存在或不在同部門");
+
                 order.Department = currentUser.Department;
+            }
+            else
+            {
+                // 一般使用者只能為自己建立訂單
+                order.UserId = currentUser.Id;
+                order.Department = currentUser.Department;
+            }
 
             var created = await _orderService.CreateOrderAsync(order);
             return Ok(created);
@@ -75,17 +86,18 @@ namespace ManufacturingSystem.Controllers
             if (currentUser.Role == UserRole.Manager)
             {
                 if (existing.User == null || existing.User.Department != currentUser.Department)
-                    return Forbid("沒有權限更新此訂單");
+                    return Forbid("沒有權限更新其他部門的訂單");
             }
             else
             {
                 if (existing.UserId != currentUser.Id)
-                    return Forbid("沒有權限更新此訂單");
+                    return Forbid("沒有權限更新他人訂單");
             }
 
-            // 防止亂改 UserId
+            // 固定使用原本的 UserId 和 Department
             order.Id = id;
             order.UserId = existing.UserId;
+            order.Department = existing.Department;
 
             var updated = await _orderService.UpdateOrderAsync(id, order);
             return Ok(updated);
