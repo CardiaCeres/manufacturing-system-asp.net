@@ -42,15 +42,10 @@ namespace ManufacturingSystem.Controllers
             if (currentUser == null)
                 return Unauthorized("無效使用者");
 
-            // ✅ 基本資料驗證
-            if (string.IsNullOrWhiteSpace(order.OrderNumber))
-                return BadRequest("訂單編號為必填");
-            if (string.IsNullOrWhiteSpace(order.ProductName))
-                return BadRequest("產品名稱為必填");
-            if (order.Quantity is null || order.Quantity <= 0)
-                return BadRequest("數量必須大於 0");
-            if (order.Price is null || order.Price < 0)
-                return BadRequest("價格不可為負數");
+            // ✅ 共用驗證方法
+            var validationError = ValidateOrder(order, true);
+            if (validationError != null)
+                return validationError;
 
             // ✅ 設定屬性（自動填入）
             if (currentUser.Role != UserRole.Manager)
@@ -60,7 +55,6 @@ namespace ManufacturingSystem.Controllers
             }
             else
             {
-                // 管理者建立時若沒指定部門則填入自己部門
                 order.Department ??= currentUser.Department;
                 order.UserId = order.UserId == 0 ? currentUser.Id : order.UserId;
             }
@@ -99,13 +93,10 @@ namespace ManufacturingSystem.Controllers
                 return Forbid("沒有權限更新他人訂單");
             }
 
-            // 驗證欄位
-            if (string.IsNullOrWhiteSpace(order.ProductName))
-                return BadRequest("產品名稱為必填");
-            if (order.Quantity is null || order.Quantity <= 0)
-                return BadRequest("數量必須大於 0");
-            if (order.Price is null || order.Price < 0)
-                return BadRequest("價格不可為負數");
+            // ✅ 共用驗證方法
+            var validationError = ValidateOrder(order, false);
+            if (validationError != null)
+                return validationError;
 
             // 保留原本不可修改的屬性
             order.Id = id;
@@ -155,6 +146,24 @@ namespace ManufacturingSystem.Controllers
             {
                 return StatusCode(500, $"刪除失敗: {ex.Message}");
             }
+        }
+
+        // ---------- 共用驗證方法 ----------
+        private IActionResult? ValidateOrder(Order order, bool isCreate)
+        {
+            if (isCreate && string.IsNullOrWhiteSpace(order.OrderNumber))
+                return BadRequest("訂單編號為必填");
+
+            if (string.IsNullOrWhiteSpace(order.ProductName))
+                return BadRequest("產品名稱為必填");
+
+            if (order.Quantity is null || order.Quantity <= 0)
+                return BadRequest("數量必須大於 0");
+
+            if (order.Price is null || order.Price < 0)
+                return BadRequest("價格不可為負數");
+
+            return null;
         }
     }
 }
