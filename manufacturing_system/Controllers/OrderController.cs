@@ -46,8 +46,8 @@ namespace ManufacturingSystem.Controllers
             var currentUser = (User?)HttpContext.Items["User"];
             if (currentUser == null) return Unauthorized("無效使用者");
 
-            if (string.IsNullOrEmpty(order.ProductName))
-                return BadRequest("產品名稱為必填");
+            if (string.IsNullOrWhiteSpace(order.ProductName))
+                       order.ProductName("產品名稱為必填");
 
             if (currentUser.Role == UserRole.Manager)
             {
