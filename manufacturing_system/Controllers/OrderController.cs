@@ -27,11 +27,13 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
+                // 管理者取得同部門所有訂單
                 var orders = await _orderService.GetOrdersByDepartmentAsync(currentUser.Department);
                 return Ok(orders);
             }
             else
             {
+                // 一般使用者只看自己的訂單
                 var orders = await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
                 return Ok(orders);
             }
@@ -49,6 +51,16 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
+                // 管理者建立訂單時，若沒有指定 UserId，預設給自己
+                if (order.UserId == 0)
+                    order.UserId = currentUser.Id;
+
+                // 強制訂單歸屬於管理者部門
+                order.Department = currentUser.Department;
+            }
+            else
+            {
+                // 一般使用者只能建立自己的訂單
                 order.UserId = currentUser.Id;
                 order.Department = currentUser.Department;
             }
@@ -69,15 +81,18 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
-                if (existing.User == null || existing.User.Department != currentUser.Department)
+                // 管理者只能更新同部門的訂單
+                if (existing.Department != currentUser.Department)
                     return Forbid("沒有權限更新其他部門的訂單");
             }
             else
             {
+                // 一般使用者只能更新自己的訂單
                 if (existing.UserId != currentUser.Id)
                     return Forbid("沒有權限更新他人訂單");
             }
 
+            // 保持原訂單的 UserId 和 Department，不可被修改
             order.Id = id;
             order.UserId = existing.UserId;
             order.Department = existing.Department;
@@ -98,11 +113,13 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
-                if (existing.User == null || existing.User.Department != currentUser.Department)
+                // 管理者只能刪除同部門的訂單
+                if (existing.Department != currentUser.Department)
                     return Forbid("沒有權限刪除此訂單");
             }
             else
             {
+                // 一般使用者只能刪除自己的訂單
                 if (existing.UserId != currentUser.Id)
                     return Forbid("沒有權限刪除此訂單");
             }
