@@ -27,13 +27,11 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
-                // 管理者可查詢同部門所有使用者的訂單
                 var orders = await _orderService.GetOrdersByDepartmentAsync(currentUser.Department);
                 return Ok(orders);
             }
             else
             {
-                // 一般使用者只能查詢自己的訂單
                 var orders = await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
                 return Ok(orders);
             }
@@ -49,9 +47,11 @@ namespace ManufacturingSystem.Controllers
             if (string.IsNullOrEmpty(order.ProductName))
                 return BadRequest("產品名稱為必填");
 
-            // 所有人建立訂單都自動綁定自己的 UserId 與 Department
-            order.UserId = currentUser.Id;
-            order.Department = currentUser.Department;
+            if (currentUser.Role == UserRole.Manager)
+            {
+                order.UserId = currentUser.Id;
+                order.Department = currentUser.Department;
+            }
 
             var created = await _orderService.CreateOrderAsync(order);
             return Ok(created);
@@ -67,7 +67,6 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查
             if (currentUser.Role == UserRole.Manager)
             {
                 if (existing.User == null || existing.User.Department != currentUser.Department)
@@ -79,7 +78,6 @@ namespace ManufacturingSystem.Controllers
                     return Forbid("沒有權限更新他人訂單");
             }
 
-            // 固定 UserId 與 Department，不允許亂改
             order.Id = id;
             order.UserId = existing.UserId;
             order.Department = existing.Department;
@@ -98,7 +96,6 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查
             if (currentUser.Role == UserRole.Manager)
             {
                 if (existing.User == null || existing.User.Department != currentUser.Department)
