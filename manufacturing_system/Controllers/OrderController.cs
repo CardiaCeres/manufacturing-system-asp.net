@@ -42,28 +42,27 @@ namespace ManufacturingSystem.Controllers
 
         // 建立訂單
         [HttpPost("create")]
-        public async Task<IActionResult> CreateOrder([FromBody] Order order)
-        {
-            var currentUser = (User?)HttpContext.Items["User"];
-            if (currentUser == null) return Unauthorized("無效使用者");
+public async Task<IActionResult> CreateOrder([FromBody] Order order)
+{
+    var currentUser = (User?)HttpContext.Items["User"];
+    if (currentUser == null) return Unauthorized("無效使用者");
 
-            if (string.IsNullOrEmpty(order.ProductName))
-                return BadRequest("產品名稱為必填");
+    if (order == null) return BadRequest("訂單資料不能為空");
 
-            // 設定訂單使用者與部門
-            order.UserId = currentUser.Id;
-            order.Department = currentUser.Department;
+    // 移除 ProductName 必填檢查
+    order.UserId = currentUser.Id;
+    order.Department = currentUser.Department;
 
-            try
-            {
-                var created = await _orderService.CreateOrderAsync(order);
-                return Ok(created);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"建立失敗: {ex.Message}");
-            }
-        }
+    try
+    {
+        var created = await _orderService.CreateOrderAsync(order);
+        return Ok(created);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"建立失敗: {ex.Message}");
+    }
+}
 
         // 更新訂單
         [HttpPut("update/{id}")]
