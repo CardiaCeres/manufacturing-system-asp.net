@@ -1,6 +1,7 @@
 using ManufacturingSystem.Models;
 using ManufacturingSystem.Services;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace ManufacturingSystem.Controllers
@@ -46,24 +47,22 @@ namespace ManufacturingSystem.Controllers
             var currentUser = (User?)HttpContext.Items["User"];
             if (currentUser == null) return Unauthorized("無效使用者");
 
-            if (string.IsNullOrWhiteSpace(order.ProductName))
-                       order.ProductName("產品名稱為必填");
+            if (string.IsNullOrEmpty(order.ProductName))
+                return BadRequest("產品名稱為必填");
 
-            if (currentUser.Role == UserRole.Manager)
-            {
-                // 管理者只能為自己部門建立訂單
-                order.Department = currentUser.Department;
-                order.UserId = currentUser.Id; 
-            }
-            else
-            {
-                // 一般使用者只能為自己建立訂單
-                order.UserId = currentUser.Id;
-                order.Department = currentUser.Department; // 假設user也有部門屬性
-            }
+            // 設定訂單使用者與部門
+            order.UserId = currentUser.Id;
+            order.Department = currentUser.Department;
 
-            var created = await _orderService.CreateOrderAsync(order);
-            return Ok(created);
+            try
+            {
+                var created = await _orderService.CreateOrderAsync(order);
+                return Ok(created);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"建立失敗: {ex.Message}");
+            }
         }
 
         // 更新訂單
@@ -76,7 +75,7 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查統一
+            // 權限檢查
             if (currentUser.Role == UserRole.Manager)
             {
                 if (existing.Department != currentUser.Department)
@@ -88,13 +87,20 @@ namespace ManufacturingSystem.Controllers
                     return Forbid("沒有權限更新他人訂單");
             }
 
-            // 維持原有訂單的使用者ID與部門
+            // 保留原訂單 UserId 與 Department
             order.Id = id;
             order.UserId = existing.UserId;
             order.Department = existing.Department;
 
-            var updated = await _orderService.UpdateOrderAsync(id, order);
-            return Ok(updated);
+            try
+            {
+                var updated = await _orderService.UpdateOrderAsync(id, order);
+                return Ok(updated);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"更新失敗: {ex.Message}");
+            }
         }
 
         // 刪除訂單
@@ -107,7 +113,7 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查統一
+            // 權限檢查
             if (currentUser.Role == UserRole.Manager)
             {
                 if (existing.Department != currentUser.Department)
@@ -119,8 +125,15 @@ namespace ManufacturingSystem.Controllers
                     return Forbid("沒有權限刪除此訂單");
             }
 
-            await _orderService.DeleteOrderAsync(id);
-            return NoContent();
+            try
+            {
+                await _orderService.DeleteOrderAsync(id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"刪除失敗: {ex.Message}");
+            }
         }
     }
 }
