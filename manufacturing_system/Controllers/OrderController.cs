@@ -50,9 +50,12 @@ namespace ManufacturingSystem.Controllers
             if (string.IsNullOrEmpty(order.ProductName))
                 return BadRequest("產品名稱為必填");
 
+            if (currentUser.Role != UserRole.Manager)
+            {
             // 設定訂單使用者與部門
             order.UserId = currentUser.Id;
             order.Department = currentUser.Department;
+            }
 
             try
             {
