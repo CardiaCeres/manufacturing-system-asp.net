@@ -24,20 +24,14 @@ namespace ManufacturingSystem.Controllers
         public async Task<IActionResult> GetMyOrders()
         {
             var currentUser = (User?)HttpContext.Items["User"];
-            if (currentUser == null) return Unauthorized("無效使用者");
+            if (currentUser == null)
+                return Unauthorized("無效使用者");
 
-            if (currentUser.Role == UserRole.Manager)
-            {
-                // 管理者取得本部門訂單
-                var orders = await _orderService.GetOrdersByDepartmentAsync(currentUser.Department);
-                return Ok(orders);
-            }
-            else
-            {
-                // 一般使用者取得自己訂單
-                var orders = await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
-                return Ok(orders);
-            }
+            var orders = currentUser.Role == UserRole.Manager
+                ? await _orderService.GetOrdersByDepartmentAsync(currentUser.Department)
+                : await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
+
+            return Ok(orders);
         }
 
         // 建立訂單
@@ -45,16 +39,30 @@ namespace ManufacturingSystem.Controllers
         public async Task<IActionResult> CreateOrder([FromBody] Order order)
         {
             var currentUser = (User?)HttpContext.Items["User"];
-            if (currentUser == null) return Unauthorized("無效使用者");
+            if (currentUser == null)
+                return Unauthorized("無效使用者");
 
-            if (string.IsNullOrEmpty(order.ProductName))
+            // ✅ 基本資料驗證
+            if (string.IsNullOrWhiteSpace(order.OrderNumber))
+                return BadRequest("訂單編號為必填");
+            if (string.IsNullOrWhiteSpace(order.ProductName))
                 return BadRequest("產品名稱為必填");
+            if (order.Quantity is null || order.Quantity <= 0)
+                return BadRequest("數量必須大於 0");
+            if (order.Price is null || order.Price < 0)
+                return BadRequest("價格不可為負數");
 
+            // ✅ 設定屬性（自動填入）
             if (currentUser.Role != UserRole.Manager)
             {
-            // 設定訂單使用者與部門
-            order.UserId = currentUser.Id;
-            order.Department = currentUser.Department;
+                order.UserId = currentUser.Id;
+                order.Department = currentUser.Department;
+            }
+            else
+            {
+                // 管理者建立時若沒指定部門則填入自己部門
+                order.Department ??= currentUser.Department;
+                order.UserId = order.UserId == 0 ? currentUser.Id : order.UserId;
             }
 
             try
@@ -69,28 +77,37 @@ namespace ManufacturingSystem.Controllers
         }
 
         // 更新訂單
-        [HttpPut("update/{id}")]
+        [HttpPut("update/{id:long}")]
         public async Task<IActionResult> UpdateOrder(long id, [FromBody] Order order)
         {
             var currentUser = (User?)HttpContext.Items["User"];
-            if (currentUser == null) return Unauthorized("無效使用者");
+            if (currentUser == null)
+                return Unauthorized("無效使用者");
 
             var existing = await _orderService.GetOrderByIdAsync(id);
-            if (existing == null) return NotFound("訂單不存在");
+            if (existing == null)
+                return NotFound("訂單不存在");
 
             // 權限檢查
             if (currentUser.Role == UserRole.Manager)
             {
-                if (existing.Department != currentUser.Department)
+                if (!string.Equals(existing.Department, currentUser.Department, StringComparison.OrdinalIgnoreCase))
                     return Forbid("沒有權限更新其他部門的訂單");
             }
-            else
+            else if (existing.UserId != currentUser.Id)
             {
-                if (existing.UserId != currentUser.Id)
-                    return Forbid("沒有權限更新他人訂單");
+                return Forbid("沒有權限更新他人訂單");
             }
 
-            // 保留原訂單 UserId 與 Department
+            // 驗證欄位
+            if (string.IsNullOrWhiteSpace(order.ProductName))
+                return BadRequest("產品名稱為必填");
+            if (order.Quantity is null || order.Quantity <= 0)
+                return BadRequest("數量必須大於 0");
+            if (order.Price is null || order.Price < 0)
+                return BadRequest("價格不可為負數");
+
+            // 保留原本不可修改的屬性
             order.Id = id;
             order.UserId = existing.UserId;
             order.Department = existing.Department;
@@ -107,25 +124,26 @@ namespace ManufacturingSystem.Controllers
         }
 
         // 刪除訂單
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("delete/{id:long}")]
         public async Task<IActionResult> DeleteOrder(long id)
         {
             var currentUser = (User?)HttpContext.Items["User"];
-            if (currentUser == null) return Unauthorized("無效使用者");
+            if (currentUser == null)
+                return Unauthorized("無效使用者");
 
             var existing = await _orderService.GetOrderByIdAsync(id);
-            if (existing == null) return NotFound("訂單不存在");
+            if (existing == null)
+                return NotFound("訂單不存在");
 
             // 權限檢查
             if (currentUser.Role == UserRole.Manager)
             {
-                if (existing.Department != currentUser.Department)
+                if (!string.Equals(existing.Department, currentUser.Department, StringComparison.OrdinalIgnoreCase))
                     return Forbid("沒有權限刪除此訂單");
             }
-            else
+            else if (existing.UserId != currentUser.Id)
             {
-                if (existing.UserId != currentUser.Id)
-                    return Forbid("沒有權限刪除此訂單");
+                return Forbid("沒有權限刪除此訂單");
             }
 
             try
