@@ -10,10 +10,12 @@ namespace ManufacturingSystem.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly IUserService _userService;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(IOrderService orderService, IUserService userService)
         {
             _orderService = orderService;
+            _userService = userService;
         }
 
         // 取得訂單列表
@@ -25,13 +27,13 @@ namespace ManufacturingSystem.Controllers
 
             if (currentUser.Role == UserRole.Manager)
             {
-                // 管理者查看本部門所有訂單
+                // 管理者取得本部門訂單
                 var orders = await _orderService.GetOrdersByDepartmentAsync(currentUser.Department);
                 return Ok(orders);
             }
             else
             {
-                // 一般使用者查看自己的訂單
+                // 一般使用者取得自己訂單
                 var orders = await _orderService.GetOrdersByUserIdAsync(currentUser.Id);
                 return Ok(orders);
             }
@@ -47,9 +49,18 @@ namespace ManufacturingSystem.Controllers
             if (string.IsNullOrEmpty(order.ProductName))
                 return BadRequest("產品名稱為必填");
 
-            // 一般使用者或管理者，訂單自動綁定使用者與部門
-            order.UserId = currentUser.Id;
-            order.Department = currentUser.Role == UserRole.Manager ? currentUser.Department : null;
+            if (currentUser.Role == UserRole.Manager)
+            {
+                // 管理者只能為自己部門建立訂單
+                order.Department = currentUser.Department;
+                order.UserId = currentUser.Id; 
+            }
+            else
+            {
+                // 一般使用者只能為自己建立訂單
+                order.UserId = currentUser.Id;
+                order.Department = currentUser.Department; // 假設user也有部門屬性
+            }
 
             var created = await _orderService.CreateOrderAsync(order);
             return Ok(created);
@@ -65,11 +76,11 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查
+            // 權限檢查統一
             if (currentUser.Role == UserRole.Manager)
             {
                 if (existing.Department != currentUser.Department)
-                    return Forbid("沒有權限更新其他部門訂單");
+                    return Forbid("沒有權限更新其他部門的訂單");
             }
             else
             {
@@ -77,12 +88,12 @@ namespace ManufacturingSystem.Controllers
                     return Forbid("沒有權限更新他人訂單");
             }
 
-            // 只允許修改必要欄位
-            existing.ProductName = order.ProductName ?? existing.ProductName;
-            existing.Quantity = order.Quantity ?? existing.Quantity;
-            existing.Price = order.Price ?? existing.Price;
+            // 維持原有訂單的使用者ID與部門
+            order.Id = id;
+            order.UserId = existing.UserId;
+            order.Department = existing.Department;
 
-            var updated = await _orderService.UpdateOrderAsync(id, existing);
+            var updated = await _orderService.UpdateOrderAsync(id, order);
             return Ok(updated);
         }
 
@@ -96,16 +107,16 @@ namespace ManufacturingSystem.Controllers
             var existing = await _orderService.GetOrderByIdAsync(id);
             if (existing == null) return NotFound("訂單不存在");
 
-            // 權限檢查
+            // 權限檢查統一
             if (currentUser.Role == UserRole.Manager)
             {
                 if (existing.Department != currentUser.Department)
-                    return Forbid("沒有權限刪除其他部門訂單");
+                    return Forbid("沒有權限刪除此訂單");
             }
             else
             {
                 if (existing.UserId != currentUser.Id)
-                    return Forbid("沒有權限刪除他人訂單");
+                    return Forbid("沒有權限刪除此訂單");
             }
 
             await _orderService.DeleteOrderAsync(id);
