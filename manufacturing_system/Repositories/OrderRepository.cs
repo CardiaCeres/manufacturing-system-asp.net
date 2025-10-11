@@ -16,8 +16,8 @@ namespace ManufacturingSystem.Repositories
         public async Task<List<Order>> GetOrdersByUserIdAsync(long userId) =>
             await _context.Orders
                 .AsNoTracking()
+                .Include(o => o.User)
                 .Where(o => o.UserId == userId)
-                .Include(o => o.User) // Include User 避免 null
                 .OrderBy(o => o.OrderNumber)
                 .ToListAsync();
 
@@ -30,7 +30,7 @@ namespace ManufacturingSystem.Repositories
 
         public async Task<Order?> GetByIdAsync(long id) =>
             await _context.Orders
-                .Include(o => o.User) // Include User 避免管理者檢查失敗
+                .Include(o => o.User)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
         public async Task<Order> UpdateAsync(Order order)
@@ -54,7 +54,7 @@ namespace ManufacturingSystem.Repositories
         public async Task<List<Order>> GetAllAsync() =>
             await _context.Orders
                 .AsNoTracking()
-                .Include(o => o.User) // Include User 避免 null
+                .Include(o => o.User)
                 .OrderBy(o => o.OrderNumber)
                 .ToListAsync();
 
@@ -62,7 +62,7 @@ namespace ManufacturingSystem.Repositories
             await _context.Orders
                 .AsNoTracking()
                 .Include(o => o.User)
-                .Where(o => o.User != null && o.User.Department == department)
+                .Where(o => o.Department == department) // 直接使用 Order.Department
                 .OrderBy(o => o.OrderNumber)
                 .ToListAsync();
     }
