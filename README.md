@@ -34,7 +34,7 @@
 ## 🌐 線上展示（Live Demo）
 
 本系統已完成部署，可透過以下網址體驗實際功能：  
-**線上展示網址**：[https://manufacturing-system-asp.net-latest.onrender.com](https://manufacturing-system-asp.net-latest.onrender.com)
+**線上展示網址**：https://manufacturing-system-asp-net-latest.onrender.com
 
 ---
 
