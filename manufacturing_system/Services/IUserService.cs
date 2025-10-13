@@ -12,6 +12,9 @@ namespace ManufacturingSystem.Services
         // 根據使用者名稱取得 User
         Task<User?> GetByUsernameAsync(string username);
 
+        // 根據 Email 取得使用者
+        Task<User?> GetByEmailAsync(string email);
+
         // 註冊新使用者（可指定部門與角色）
         Task<User> RegisterUserAsync(User user);
 
