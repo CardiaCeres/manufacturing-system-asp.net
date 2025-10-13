@@ -22,23 +22,32 @@ namespace ManufacturingSystem.Services
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
         }
 
+        // 發送重設密碼信
         public async Task SendResetPasswordEmailAsync(string toEmail, string resetUrl)
         {
-            await SendCustomEmailAsync("no-reply@yourapp.com", toEmail, "重設您的密碼",
-                $@"
+            string htmlContent = $@"
                 <div style='font-family:Arial,sans-serif;line-height:1.6'>
                     <h2>🔐 重設密碼通知</h2>
                     <p>請點擊下方按鈕設定新密碼：</p>
-                    <p><a href='{resetUrl}' style='display:inline-block;padding:10px 20px;background-color:#667eea;color:#fff;text-decoration:none;border-radius:8px;'>重設密碼</a></p>
-                </div>");
+                    <p>
+                        <a href='{resetUrl}' 
+                           style='display:inline-block;padding:10px 20px;background-color:#667eea;color:#fff;text-decoration:none;border-radius:8px;'>
+                           重設密碼
+                        </a>
+                    </p>
+                </div>";
+
+            await SendCustomEmailAsync(toEmail, "no-reply@yourapp.com", "重設您的密碼", htmlContent);
         }
 
-        public async Task SendNotificationEmailAsync(string toEmail, string subject, string message)
+        // 發送一般通知信
+        public async Task SendNotificationEmailAsync(string toEmail, string subject, string htmlContent)
         {
-            await SendCustomEmailAsync("no-reply@yourapp.com", toEmail, subject, message);
+            await SendCustomEmailAsync(toEmail, "no-reply@yourapp.com", subject, htmlContent);
         }
 
-        public async Task SendCustomEmailAsync(string fromEmail, string toEmail, string subject, string htmlContent)
+        // 發送自訂內容信件
+        public async Task SendCustomEmailAsync(string toEmail, string fromEmail, string subject, string htmlContent)
         {
             var payload = new
             {
@@ -51,7 +60,7 @@ namespace ManufacturingSystem.Services
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync("/emails", content);
+            var response = await _httpClient.PostAsync("/v1/emails", content);
 
             if (!response.IsSuccessStatusCode)
             {
