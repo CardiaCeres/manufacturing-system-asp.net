@@ -66,11 +66,22 @@ namespace ManufacturingSystem.Controllers
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             var user = await _userService.GetByUsernameAsync(request.Email);
-            if (user == null) return NotFound("找不到此使用者");
+            if (user == null)
+                return NotFound("找不到此使用者");
 
             var token = await _userService.GenerateResetTokenAsync(user);
             var resetUrl = $"https://yourapp.com/reset-password?token={token}&username={user.Username}";
-            await _emailService.SendResetPasswordEmailAsync(user.Email, resetUrl);
+
+            try
+            {
+                await _emailService.SendResetPasswordEmailAsync(user.Email, resetUrl);
+            }
+            catch (Exception ex)
+            {
+                // 日誌可以改成你的 logging framework
+                Console.WriteLine($"寄送重設密碼信失敗: {ex.Message}");
+                return StatusCode(500, "寄送重設密碼信失敗，請稍後再試");
+            }
 
             return Ok("重設密碼信已寄出");
         }
