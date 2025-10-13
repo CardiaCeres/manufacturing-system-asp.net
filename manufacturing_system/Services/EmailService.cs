@@ -60,7 +60,7 @@ namespace ManufacturingSystem.Services
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync("/v1/emails", content);
+            var response = await _httpClient.PostAsync("/emails", content);
 
             if (!response.IsSuccessStatusCode)
             {
