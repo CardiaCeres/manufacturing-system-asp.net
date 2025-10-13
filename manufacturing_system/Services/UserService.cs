@@ -30,6 +30,9 @@ namespace ManufacturingSystem.Services
         public async Task<User?> GetByUsernameAsync(string username) =>
             await _userRepository.GetByUsernameAsync(username);
 
+        public async Task<User?> GetByEmailAsync(string email) =>
+            await _userRepository.GetByEmailAsync(email);
+
         public async Task<User?> GetUserByIdAsync(long userId) =>
             await _userRepository.GetByIdAsync(userId);
 
