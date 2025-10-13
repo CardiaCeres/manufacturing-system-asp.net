@@ -65,7 +65,7 @@ namespace ManufacturingSystem.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            var user = await _userService.GetByUsernameAsync(request.Email);
+            var user = await _userService.GetByEmailAsync(request.Email);
             if (user == null)
                 return NotFound("找不到此使用者");
 
