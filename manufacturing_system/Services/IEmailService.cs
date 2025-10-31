@@ -11,6 +11,6 @@ namespace ManufacturingSystem.Services
         Task SendNotificationEmailAsync(string toEmail, string subject, string htmlContent);
 
         // 發送自訂內容信件
-        Task SendCustomEmailAsync(string toEmail, string subject, string htmlContent);
+        Task SendCustomEmailAsync(string toEmail, string fromEmail, string subject, string htmlContent);
     }
 }
