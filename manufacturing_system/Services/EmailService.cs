@@ -56,7 +56,7 @@ namespace ManufacturingSystem.Services
         }
 
         // 發送自訂內容信件
-        private async Task SendCustomEmailAsync(string toEmail, string subject, string htmlContent)
+        public async Task SendCustomEmailAsync(string toEmail, string subject, string htmlContent)
         {
             var payload = new
             {
