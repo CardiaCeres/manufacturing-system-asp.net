@@ -72,7 +72,7 @@ namespace ManufacturingSystem.Controllers
             var token = await _userService.GenerateResetTokenAsync(user);
             var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL")
                      ?? throw new InvalidOperationException("FRONTEND_URL 未設定");
-            var resetUrl = $"{frontendUrl}?token={token}&username={user.Username}";
+            var resetUrl = $"{frontendUrl.TrimEnd('/')}/reset-password?token={token}&username={user.Username}";
 
             try
             {
