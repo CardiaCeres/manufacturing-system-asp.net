@@ -3,19 +3,26 @@
     <div class="reset-box">
       <h2>🔑 重設密碼</h2>
       <form @submit.prevent="submitNewPassword" class="reset-form">
+      <div class="password-field">
         <input
           v-model="password"
-          :type="showPassword ? 'text' : 'password'"
+          :type="showPassword1 ? 'text' : 'password'"
           placeholder="輸入新密碼"
           required
         />
         <span class="toggle-eye" @click="togglePassword">👁️</span>
+        </div> 
+
+        <div class="password-field">
         <input
           v-model="confirmPassword"
-          :type="showPassword ? 'text' : 'password'"
+          :type="showPassword2 ? 'text' : 'password'"
           placeholder="再次輸入新密碼"
           required
         />
+        <span class="toggle-eye" @click="togglePassword(2)">👁️</span>
+        </div>
+
         <button type="submit">重設密碼</button>
       </form>
 
@@ -27,15 +34,18 @@
         <a @click="goBack">返回登入頁</a>
       </p>
     </div>
+    <ChatWidget />
   </div>
 </template>
 
 <script>
 import axios from "axios";
 import { useRoute, useRouter } from "vue-router";
+import ChatWidget from "@/components/ChatWidget.vue";
 
 export default {
   name: "ResetPassword",
+  components: { ChatWidget },
   setup() {
     const route = useRoute();
     const router = useRouter();
@@ -45,13 +55,15 @@ export default {
     return {
       password: "",
       confirmPassword: "",
-      showPassword: false,
+      showPassword1: false,
+      showPassword2: false,
       message: ""
     };
   },
   methods: {
-    togglePassword() {
-      this.showPassword = !this.showPassword;
+    togglePassword(field) {
+      if (field === 1) this.showPassword1 = !this.showPassword1; 
+      if (field === 2) this.showPassword2 = !this.showPassword2;
     },
     goBack() {
       this.$router.push("/login");
@@ -69,7 +81,7 @@ export default {
       }
 
       try {
-        const response = await axios.post("/api/reset-password", {
+        const response = await axios.post("/reset-password", {
           token,
           password: this.password
         });
@@ -130,10 +142,15 @@ export default {
   transition: 0.3s;
 }
 
+.password-field {
+  position: relative;
+  width: 100%;
+}
+
 .toggle-eye {
   position: absolute;
   right: 12px;
-  top: 36px;
+  top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
   user-select: none;
