@@ -36,14 +36,19 @@ namespace ManufacturingSystem.Services
             string htmlContent = $@"
                 <div style='font-family:Arial,sans-serif;line-height:1.6'>
                     <h2>🔐 重設密碼通知</h2>
-                    <p>請點擊下方按鈕設定新密碼：</p>
+                    <p>您好，</p>
+                    <p>我們收到了您重設密碼的請求，請點擊下方按鈕以設定新密碼：</p>
                     <p>
                         <a href='{resetUrl}'
-                           style='display:inline-block;padding:10px 20px;background-color:#667eea;color:#fff;text-decoration:none;border-radius:8px;'>
-                           重設密碼
+                           style='display:inline-block;padding:10px 20px;
+                           background-color:#667eea;color:#fff;
+                           text- decoration:none;border-radius:8px;'>
+                           👉重設密碼
                         </a>
                     </p>
-                    <p>如果您沒有申請此操作，請忽略此郵件。</p>
+                    <p>如果不是您本人操作，請忽略這封信件。</p>
+                    <hr/>
+                    <small>智慧訂單管理系統 · 請勿回覆此信件</small>
                 </div>";
 
             await SendCustomEmailAsync(toEmail, "重設您的密碼", htmlContent);
