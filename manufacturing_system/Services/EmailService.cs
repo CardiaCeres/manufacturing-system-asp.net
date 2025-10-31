@@ -39,9 +39,9 @@ namespace ManufacturingSystem.Services
                     <p>您好，</p>
                     <p>我們收到了您重設密碼的請求，請點擊下方按鈕以設定新密碼：</p>
                     <p>
-                        <a href="%s" style="display:inline-block;padding:10px 20px;
+                        <a href='{resetUrl}' style='display:inline-block;padding:10px 20px;
                            background-color:#667eea;color:#fff;
-                           text- decoration:none;border-radius:8px;'>
+                           text-decoration:none;border-radius:8px;'>
                            👉重設密碼
                         </a>
                     </p>
