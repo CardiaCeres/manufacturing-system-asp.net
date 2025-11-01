@@ -15,6 +15,9 @@ namespace ManufacturingSystem.Services
         // 根據 Email 取得使用者
         Task<User?> GetByEmailAsync(string email);
 
+        // 根據 Token 取得使用者（新增，用於重設密碼）
+        Task<User?> GetByResetTokenAsync(string token);
+
         // 註冊新使用者（可指定部門與角色）
         Task<User> RegisterUserAsync(User user);
 
