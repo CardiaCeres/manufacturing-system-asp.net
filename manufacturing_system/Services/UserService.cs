@@ -96,7 +96,7 @@ namespace ManufacturingSystem.Services
 
             user.Password = _passwordHasher.HashPassword(user, newPassword);
             user.ResetToken = null;
-            user.TokenExpiry = null;
+
 
             // 確保更新一定寫入資料庫
             await _userRepository.AddOrUpdateAsync(user);
