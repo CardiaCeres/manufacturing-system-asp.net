@@ -24,6 +24,14 @@ namespace ManufacturingSystem.Models
 
         // 密碼重置相關
         public string? ResetToken { get; set; }
-        public DateTime? TokenExpiry { get; set; }
+
+        private DateTime? _tokenExpiry;
+        public DateTime? TokenExpiry
+        {
+            get => _tokenExpiry;
+            set => _tokenExpiry = value.HasValue 
+                ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) 
+                : null;
+        }
     }
 }
