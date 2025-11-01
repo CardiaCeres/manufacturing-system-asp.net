@@ -21,14 +21,23 @@ namespace ManufacturingSystem.Data
 
             base.OnModelCreating(modelBuilder);
 
-             // TokenExpiry 轉 UTC 並指定 PostgreSQL timestamptz
+            // TokenExpiry 使用 UTC，並指定 PostgreSQL timestamptz
+            var dateTimeConverter = new ValueConverter<DateTime?, DateTime?>(
+                v => v.HasValue ? v.Value.ToUniversalTime() : null,
+                v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : null
+            );
+
+            var dateTimeComparer = new ValueComparer<DateTime?>(
+                (c1, c2) => c1.Equals(c2),
+                c => c.HasValue ? c.Value.GetHashCode() : 0,
+                c => c.HasValue ? DateTime.SpecifyKind(c.Value, DateTimeKind.Utc) : null
+            );
+
             modelBuilder.Entity<User>()
                 .Property(u => u.TokenExpiry)
                 .HasColumnType("timestamptz")
-                .HasConversion(
-                    v => v.HasValue ? v.Value.ToUniversalTime() : null,
-                    v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : null
-                );
+                .HasConversion(dateTimeConverter)
+                .Metadata.SetValueComparer(dateTimeComparer);
         }
     }
 }
