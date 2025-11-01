@@ -91,7 +91,7 @@ namespace ManufacturingSystem.Services
         {
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
-
+            if (string.IsNullOrWhiteSpace(newPassword)) throw new ArgumentNullException(nameof(newPassword));
             user.Password = _passwordHasher.HashPassword(user, newPassword);
             user.ResetToken = null; // 只清除 Token，保留 TokenExpiry
 
