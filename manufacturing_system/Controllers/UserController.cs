@@ -90,7 +90,7 @@ namespace ManufacturingSystem.Controllers
              if (!isValid) return BadRequest("無效或過期的重設 Token");
 
              // 重設密碼
-             await _userService.ResetPasswordAsync(user, request.NewPassword);
+             await _userService.ResetPasswordAsync(user, request.Password);
              return Ok("密碼重設成功");
         }
 
@@ -150,6 +150,6 @@ namespace ManufacturingSystem.Controllers
     public class ResetPasswordRequest
     {
         public string Token { get; set; } = string.Empty;
-        public string NewPassword { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }
