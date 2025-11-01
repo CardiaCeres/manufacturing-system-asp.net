@@ -1,6 +1,7 @@
 using ManufacturingSystem.Models;
 using ManufacturingSystem.Repositories;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using BCrypt.Net;
 
@@ -9,99 +10,109 @@ namespace ManufacturingSystem.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
-        private readonly int BcryptWorkFactor = 12;
 
         public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
 
-        // 驗證使用者帳密
+        // 驗證使用者帳號密碼
         public async Task<User?> ValidateUserAsync(string username, string password)
         {
             var user = await _userRepository.GetByUsernameAsync(username);
-            if (user == null) return null;
+            if (user == null || string.IsNullOrEmpty(user.Password))
+                return null;
 
-            bool valid = BCrypt.Net.BCrypt.Verify(password, user.Password);
-            return valid ? user : null;
+            return BCrypt.Net.BCrypt.Verify(password, user.Password) ? user : null;
         }
 
-        // 註冊
+        // 根據使用者名稱取得 User
+        public async Task<User?> GetByUsernameAsync(string username) =>
+            await _userRepository.GetByUsernameAsync(username);
+
+        // 根據 Email 取得使用者
+        public async Task<User?> GetByEmailAsync(string email) =>
+            await _userRepository.GetByEmailAsync(email);
+
+        // 根據 Token 取得使用者（重設密碼用）
+        public async Task<User?> GetByResetTokenAsync(string token)
+        {
+            var user = await _userRepository.GetByResetTokenAsync(token);
+            if (user == null) return null;
+
+            if (!user.TokenExpiry.HasValue || user.TokenExpiry.Value <= DateTime.UtcNow)
+            {
+                user.ResetToken = null;
+                user.TokenExpiry = null;
+                await _userRepository.AddOrUpdateAsync(user);
+                return null;
+            }
+
+            return user;
+        }
+
+        // 註冊新使用者
         public async Task<User> RegisterUserAsync(User user)
         {
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password, BcryptWorkFactor);
+            if (user.Role == 0)
+                user.Role = UserRole.User;
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             return await _userRepository.AddOrUpdateAsync(user);
         }
 
-        // 根據 Email 找使用者
-        public async Task<User?> GetByEmailAsync(string email)
-        {
-            return await _userRepository.GetByEmailAsync(email);
-        }
-
-        // 根據 Username 找使用者
-        public async Task<User?> GetByUsernameAsync(string username)
-        {
-            return await _userRepository.GetByUsernameAsync(username);
-        }
-
-        // 產生重設 Token
+        // 產生密碼重設 Token
         public async Task<string> GenerateResetTokenAsync(User user)
         {
             var token = Guid.NewGuid().ToString();
             user.ResetToken = token;
-
-            // UTC
-            user.TokenExpiry = DateTime.UtcNow.AddHours(1);
-
+            user.TokenExpiry = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(1), DateTimeKind.Utc);
             await _userRepository.AddOrUpdateAsync(user);
             return token;
-        }
-
-        // 驗證 Reset Token 是否有效
-        public async Task<bool> IsResetTokenValidAsync(User user, string token)
-        {
-            if (user.ResetToken != token) return false;
-            if (user.TokenExpiry == null) return false;
-
-            return user.TokenExpiry.Value > DateTime.UtcNow;
         }
 
         // 重設密碼
         public async Task ResetPasswordAsync(User user, string newPassword)
         {
-            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword, BcryptWorkFactor);
+            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
             user.ResetToken = null;
 
-            // 確保 UTC
             if (user.TokenExpiry != null)
                 user.TokenExpiry = DateTime.SpecifyKind(user.TokenExpiry.Value, DateTimeKind.Utc);
 
             await _userRepository.AddOrUpdateAsync(user);
         }
 
-        // 管理者取得同部門使用者
-        public async Task<User[]> GetUsersByDepartmentAsync(string department)
+        // 驗證密碼重設 Token 是否有效
+        public Task<bool> IsResetTokenValidAsync(User user, string token)
         {
-            return await _userRepository.GetUsersByDepartmentAsync(department);
+            return Task.FromResult(
+                user != null &&
+                user.ResetToken == token &&
+                user.TokenExpiry.HasValue &&
+                user.TokenExpiry.Value > DateTime.UtcNow
+            );
         }
 
-        // 更新使用者
+        // 根據使用者 Id 取得使用者
+        public async Task<User?> GetUserByIdAsync(long userId) =>
+            await _userRepository.GetByIdAsync(userId);
+
+        // 取得同部門所有使用者
+        public async Task<IEnumerable<User>> GetUsersByDepartmentAsync(string department) =>
+            await _userRepository.GetByDepartmentAsync(department);
+
+        // 更新使用者資料（包含角色、部門）
         public async Task<User> UpdateUserAsync(User user)
         {
+            if (!string.IsNullOrEmpty(user.Password))
+                user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+
             return await _userRepository.AddOrUpdateAsync(user);
         }
 
         // 刪除使用者
-        public async Task DeleteUserAsync(long id)
-        {
-            await _userRepository.DeleteAsync(id);
-        }
-
-        // 根據 Reset Token 找使用者
-        public async Task<User?> GetByResetTokenAsync(string token)
-        {
-            return await _userRepository.GetByResetTokenAsync(token);
-        }
+        public async Task DeleteUserAsync(long userId) =>
+            await _userRepository.DeleteAsync(userId);
     }
 }
