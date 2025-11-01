@@ -70,7 +70,6 @@ namespace ManufacturingSystem.Services
             if (!user.TokenExpiry.HasValue || user.TokenExpiry <= DateTime.UtcNow)
             {
                 user.ResetToken = null;
-                user.TokenExpiry = null;
                 await _userRepository.AddOrUpdateAsync(user);
                 return null;
             }
