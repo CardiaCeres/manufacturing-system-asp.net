@@ -2,6 +2,7 @@ using ManufacturingSystem.Models;
 using ManufacturingSystem.Services;
 using ManufacturingSystem.Security;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 
 namespace ManufacturingSystem.Controllers
@@ -43,31 +44,19 @@ namespace ManufacturingSystem.Controllers
                 Email = request.Email,
                 Password = request.Password,
                 Department = request.Department ?? string.Empty,
-                Role = UserRole.User // 強制預設 Role = User
+                Role = UserRole.User
             };
 
             var newUser = await _userService.RegisterUserAsync(user);
             return Ok(newUser);
         }
 
-        // 取得使用者資料（自己）
-        [HttpGet("me")]
-        public async Task<IActionResult> GetMyProfile()
-        {
-            var currentUser = (User?)HttpContext.Items["User"];
-            if (currentUser == null) return Unauthorized();
-
-            var user = await _userService.GetUserByIdAsync(currentUser.Id);
-            return Ok(user);
-        }
-
         // 忘記密碼 → 產生重設 Token 並寄信
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-           var user = await _userService.GetByEmailAsync(request.Email);
-            if (user == null)
-                return NotFound("找不到此使用者");
+            var user = await _userService.GetByEmailAsync(request.Email);
+            if (user == null) return NotFound("找不到此使用者");
 
             var token = await _userService.GenerateResetTokenAsync(user);
             var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL")
@@ -75,22 +64,28 @@ namespace ManufacturingSystem.Controllers
 
             var resetUrl = $"{frontendUrl.TrimEnd('/')}/reset-password?token={token}";
 
-            await _emailService.SendResetPasswordEmailAsync(user.Email, resetUrl);
+            try
+            {
+                await _emailService.SendResetPasswordEmailAsync(user.Email, resetUrl);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"寄送重設密碼信失敗: {ex.Message}");
+                return StatusCode(500, "寄送重設密碼信失敗，請稍後再試");
+            }
 
             return Ok("重設密碼信已寄出");
         }
 
-        // 重設密碼
+        // 重設密碼（只用 token）
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
-           // 使用 token 查找 user
-           var user = await _userService.GetByResetTokenAsync(request.Token);
-            if (user == null)
-                return NotFound("無效或過期的重設 Token");
+            if (string.IsNullOrEmpty(request.Token))
+                return BadRequest("缺少重設密碼 Token");
 
-            var isValid = await _userService.IsResetTokenValidAsync(user, request.Token);
-            if (!isValid) return BadRequest("無效或過期的重設 Token");
+            var user = await _userService.GetByResetTokenAsync(request.Token);
+            if (user == null) return NotFound("無效或過期的重設 Token");
 
             await _userService.ResetPasswordAsync(user, request.NewPassword);
             return Ok("密碼重設成功");
@@ -151,7 +146,6 @@ namespace ManufacturingSystem.Controllers
 
     public class ResetPasswordRequest
     {
-        public string Username { get; set; } = string.Empty;
         public string Token { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
     }
