@@ -88,15 +88,17 @@ namespace ManufacturingSystem.Services
 
         // 重設密碼
         public async Task ResetPasswordAsync(User user, string newPassword)
-        {
-            if (user == null)
-                throw new ArgumentNullException(nameof(user));
-            if (string.IsNullOrWhiteSpace(newPassword)) throw new ArgumentNullException(nameof(newPassword));
-            user.Password = _passwordHasher.HashPassword(user, newPassword);
-            user.ResetToken = null; // 只清除 Token，保留 TokenExpiry
+{
+    user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+    user.ResetToken = null;
 
-            await _userRepository.AddOrUpdateAsync(user);
-        }
+    // 修正 TokenExpiry 為 UTC
+    if (user.TokenExpiry != null)
+        user.TokenExpiry = DateTime.SpecifyKind(user.TokenExpiry.Value, DateTimeKind.Utc);
+
+    await _userRepository.AddOrUpdateAsync(user); // 寫入 DB
+}
+
 
         // 取得同部門使用者
         public async Task<IEnumerable<User>> GetUsersByDepartmentAsync(string department)
