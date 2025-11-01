@@ -65,8 +65,9 @@ namespace ManufacturingSystem.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            var user = await _userService.GetByUsernameAsync(request.Email);
-            if (user == null) return NotFound("找不到此使用者");
+           var user = await _userService.GetByEmailAsync(request.Email);
+            if (user == null)
+                return NotFound("找不到此使用者");
 
             var token = await _userService.GenerateResetTokenAsync(user);
             var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL")
@@ -83,6 +84,7 @@ namespace ManufacturingSystem.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
+           // 使用 token 查找 user
            var user = await _userService.GetByResetTokenAsync(request.Token);
             if (user == null)
                 return NotFound("無效或過期的重設 Token");
