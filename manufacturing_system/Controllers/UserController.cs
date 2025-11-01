@@ -92,8 +92,9 @@ namespace ManufacturingSystem.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
-            var user = await _userService.GetByUsernameAsync(request.Username);
-            if (user == null) return NotFound("找不到此使用者");
+            // 使用 token 查找 user
+            var user = await _userService.GetByResetTokenAsync(request.Token);
+            if (user == null) return NotFound("無效或過期的重設 Token");
 
             var isValid = await _userService.IsResetTokenValidAsync(user, request.Token);
             if (!isValid) return BadRequest("無效或過期的重設 Token");
