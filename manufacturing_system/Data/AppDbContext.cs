@@ -20,6 +20,15 @@ namespace ManufacturingSystem.Data
                 .IsRequired();
 
             base.OnModelCreating(modelBuilder);
+
+             // TokenExpiry 轉 UTC 並指定 PostgreSQL timestamptz
+            modelBuilder.Entity<User>()
+                .Property(u => u.TokenExpiry)
+                .HasColumnType("timestamptz")
+                .HasConversion(
+                    v => v.HasValue ? v.Value.ToUniversalTime() : null,
+                    v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : null
+                );
         }
     }
 }
