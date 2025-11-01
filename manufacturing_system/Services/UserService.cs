@@ -60,15 +60,17 @@ namespace ManufacturingSystem.Services
             return token;
         }
 
-        // ✅ 依 Token 查找使用者（同時驗證有效性）
+        // ✅ 依 Token 查找使用者（只清除過期 token）
         public async Task<User?> GetByResetTokenAsync(string token)
         {
+            if (string.IsNullOrEmpty(token)) return null;
+
             var user = await _userRepository.GetByResetTokenAsync(token);
             if (user == null) return null;
 
-            // 自動清除過期 Token
             if (!user.TokenExpiry.HasValue || user.TokenExpiry <= DateTime.UtcNow)
             {
+                // 過期 → 清除 ResetToken，但保留 TokenExpiry
                 user.ResetToken = null;
                 await _userRepository.AddOrUpdateAsync(user);
                 return null;
@@ -88,7 +90,7 @@ namespace ManufacturingSystem.Services
             );
         }
 
-        // ✅ 重設密碼
+        // ✅ 重設密碼（只清 ResetToken，保留 TokenExpiry）
         public async Task ResetPasswordAsync(User user, string newPassword)
         {
             if (user == null)
@@ -97,8 +99,6 @@ namespace ManufacturingSystem.Services
             user.Password = _passwordHasher.HashPassword(user, newPassword);
             user.ResetToken = null;
 
-
-            // 確保更新一定寫入資料庫
             await _userRepository.AddOrUpdateAsync(user);
         }
 
@@ -115,6 +115,7 @@ namespace ManufacturingSystem.Services
             {
                 user.Password = _passwordHasher.HashPassword(user, user.Password);
             }
+
             return await _userRepository.AddOrUpdateAsync(user);
         }
 
