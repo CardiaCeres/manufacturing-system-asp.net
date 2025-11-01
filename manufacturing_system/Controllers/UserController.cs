@@ -77,18 +77,21 @@ namespace ManufacturingSystem.Controllers
             return Ok("重設密碼信已寄出");
         }
 
-        // 重設密碼（只用 token）
+        /// 重設密碼
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
-        {
-            if (string.IsNullOrEmpty(request.Token))
-                return BadRequest("缺少重設密碼 Token");
+       {
+             // 使用 token 查找 user
+             var user = await _userService.GetByResetTokenAsync(request.Token);
+             if (user == null) return NotFound("無效或過期的重設 Token");
 
-            var user = await _userService.GetByResetTokenAsync(request.Token);
-            if (user == null) return NotFound("無效或過期的重設 Token");
+             // 驗證 token 是否有效（可選，如果 GetByResetTokenAsync 已驗證則可省略）
+             var isValid = await _userService.IsResetTokenValidAsync(user, request.Token);
+             if (!isValid) return BadRequest("無效或過期的重設 Token");
 
-            await _userService.ResetPasswordAsync(user, request.NewPassword);
-            return Ok("密碼重設成功");
+             // 重設密碼
+             await _userService.ResetPasswordAsync(user, request.NewPassword);
+             return Ok("密碼重設成功");
         }
 
         // 以下為管理者功能
