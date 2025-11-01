@@ -21,7 +21,8 @@ namespace ManufacturingSystem.Services
         public async Task<User?> ValidateUserAsync(string username, string password)
         {
             var user = await _userRepository.GetByUsernameAsync(username);
-            if (user == null) return null;
+            if (user == null || string.IsNullOrEmpty(user.Password))
+                return null;
 
             var result = _passwordHasher.VerifyHashedPassword(user, user.Password, password);
             return result == PasswordVerificationResult.Success ? user : null;
@@ -31,21 +32,20 @@ namespace ManufacturingSystem.Services
         public async Task<User?> GetByUsernameAsync(string username) =>
             await _userRepository.GetByUsernameAsync(username);
 
-        // ✅ 依Email查找
+        // ✅ 依 Email 查找
         public async Task<User?> GetByEmailAsync(string email) =>
             await _userRepository.GetByEmailAsync(email);
 
-        // ✅ 依ID查找
+        // ✅ 依 ID 查找
         public async Task<User?> GetUserByIdAsync(long userId) =>
             await _userRepository.GetByIdAsync(userId);
 
-        // ✅ 註冊
+        // ✅ 註冊新使用者
         public async Task<User> RegisterUserAsync(User user)
         {
-            // 預設角色為 User
-            if (user.Role == 0) user.Role = UserRole.User;
+            if (user.Role == 0)
+                user.Role = UserRole.User;
 
-            // 加密密碼
             user.Password = _passwordHasher.HashPassword(user, user.Password);
             return await _userRepository.AddOrUpdateAsync(user);
         }
@@ -55,12 +55,12 @@ namespace ManufacturingSystem.Services
         {
             var token = Guid.NewGuid().ToString();
             user.ResetToken = token;
-            user.TokenExpiry = DateTime.UtcNow.AddHours(1); // Token 有效期 1 小時
+            user.TokenExpiry = DateTime.UtcNow.AddHours(1); // 有效期 1 小時
             await _userRepository.AddOrUpdateAsync(user);
             return token;
         }
 
-        // ✅ 依 Token 查找使用者（新增）
+        // ✅ 依 Token 查找使用者（同時驗證有效性）
         public async Task<User?> GetByResetTokenAsync(string token)
         {
             var user = await _userRepository.GetByResetTokenAsync(token);
@@ -78,32 +78,38 @@ namespace ManufacturingSystem.Services
             return user;
         }
 
-        // ✅ 重設密碼
-        public async Task ResetPasswordAsync(User user, string newPassword)
-        {
-            user.Password = _passwordHasher.HashPassword(user, newPassword);
-            user.ResetToken = null;
-            user.TokenExpiry = null;
-            await _userRepository.AddOrUpdateAsync(user);
-        }
-
-        // ✅ 驗證 Token 是否有效（可供 Controller 額外使用）
+        // ✅ 驗證 Token 是否有效
         public Task<bool> IsResetTokenValidAsync(User user, string token)
         {
             return Task.FromResult(
+                user != null &&
                 user.ResetToken == token &&
                 user.TokenExpiry.HasValue &&
                 user.TokenExpiry > DateTime.UtcNow
             );
         }
 
-        // ✅ 取得同部門使用者
+        // ✅ 重設密碼
+        public async Task ResetPasswordAsync(User user, string newPassword)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            user.Password = _passwordHasher.HashPassword(user, newPassword);
+            user.ResetToken = null;
+            user.TokenExpiry = null;
+
+            // 確保更新一定寫入資料庫
+            await _userRepository.AddOrUpdateAsync(user);
+        }
+
+        // ✅ 同部門使用者
         public async Task<IEnumerable<User>> GetUsersByDepartmentAsync(string department)
         {
             return await _userRepository.GetByDepartmentAsync(department);
         }
 
-        // ✅ 更新使用者資料（若有修改密碼則加密）
+        // ✅ 更新使用者資料
         public async Task<User> UpdateUserAsync(User user)
         {
             if (!string.IsNullOrEmpty(user.Password))
