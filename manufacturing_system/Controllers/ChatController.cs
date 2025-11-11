@@ -30,7 +30,7 @@ namespace ManufacturingSystem.Controllers
 
             var userMessage = msg.GetString();
 
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_apiKey}";
 
             var contentJson = JsonSerializer.Serialize(new
             {
