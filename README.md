@@ -1,5 +1,12 @@
 # 🧠 智慧訂單管理系統（Smart Order Management System）
- 
+
+## 🌐 線上展示（Live Demo）
+
+本系統已完成部署，可透過以下網址體驗實際功能：  
+**線上展示網址**：https://manufacturing-system-asp-net-latest.onrender.com
+
+---
+
 [![Live on Render](https://img.shields.io/badge/render-live-success?logo=render&style=flat)](https://your-app-name.onrender.com)
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/yourusername/smart-order-system)
  
@@ -28,13 +35,6 @@
 - ☁️ 資料儲存於雲端 Neon PostgreSQL，安全又快速
 - 🔄 自動部署至 Render，開發更流暢
 - 🤖 AI 客服小幫手：整合自然語言處理（NLP）技術，能透過智慧對話協助使用者快速查詢訂單狀態、解決常見問題，提升客服效率與使用者體驗。
-
----
-
-## 🌐 線上展示（Live Demo）
-
-本系統已完成部署，可透過以下網址體驗實際功能：  
-**線上展示網址**：https://manufacturing-system-asp-net-latest.onrender.com
 
 ---
 
